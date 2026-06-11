@@ -68,7 +68,7 @@ async function handleItemClick(item: Notification) {
     await notificationStore.markAsRead(item.id, true);
   }
   if (item.bookingId) {
-    router.push('/my-bookings');
+    router.push({ path: '/my-bookings', query: { bookingId: String(item.bookingId) } });
   }
 }
 
