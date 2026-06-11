@@ -2,18 +2,37 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Not, Repository } from 'typeorm';
 import { BookingStatus } from '../../common/enums/booking-status.enum';
+import { NotificationType } from '../../common/enums/notification-type.enum';
 import { UserRole } from '../../common/enums/user-role.enum';
 import { JwtRequestUser } from '../../common/middlewares/auth.middleware';
 import { createBookingNo } from '../../utils/id.util';
 import { Course } from '../course/entity/course.entity';
+import { NotificationService } from '../notification/notification.service';
 import { Booking } from './entity/booking.entity';
 import { CreateBookingDto } from './dto/create-booking.dto';
+
+const notificationTitleMap: Record<BookingStatus, string> = {
+  [BookingStatus.PENDING]: '预约已提交',
+  [BookingStatus.CONFIRMED]: '预约已确认',
+  [BookingStatus.COMPLETED]: '预约已完成',
+  [BookingStatus.CANCELLED]: '预约已取消',
+  [BookingStatus.NO_SHOW]: '预约已缺席',
+};
+
+const notificationTypeMap: Record<BookingStatus, NotificationType> = {
+  [BookingStatus.PENDING]: NotificationType.BOOKING_PENDING,
+  [BookingStatus.CONFIRMED]: NotificationType.BOOKING_CONFIRMED,
+  [BookingStatus.COMPLETED]: NotificationType.BOOKING_COMPLETED,
+  [BookingStatus.CANCELLED]: NotificationType.BOOKING_CANCELLED,
+  [BookingStatus.NO_SHOW]: NotificationType.BOOKING_NO_SHOW,
+};
 
 @Injectable()
 export class BookingService {
   constructor(
     @InjectRepository(Booking) private readonly bookingRepo: Repository<Booking>,
     @InjectRepository(Course) private readonly courseRepo: Repository<Course>,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async create(dto: CreateBookingDto, user: JwtRequestUser) {
@@ -32,7 +51,7 @@ export class BookingService {
       throw new BadRequestException('该时段余位不足');
     }
 
-    return this.bookingRepo.save(
+    const booking = await this.bookingRepo.save(
       this.bookingRepo.create({
         ...dto,
         bookingNo: createBookingNo(),
@@ -40,6 +59,10 @@ export class BookingService {
         status: BookingStatus.PENDING,
       }),
     );
+
+    await this.sendStatusNotification(booking, course.title);
+
+    return booking;
   }
 
   findMy(userId: number, status?: BookingStatus) {
@@ -74,8 +97,13 @@ export class BookingService {
     if (ownsBooking && status !== BookingStatus.CANCELLED && user.role === UserRole.STUDENT) {
       throw new ForbiddenException('学员仅可取消自己的预约');
     }
+    const oldStatus = booking.status;
     booking.status = status;
-    return this.bookingRepo.save(booking);
+    const saved = await this.bookingRepo.save(booking);
+    if (oldStatus !== status) {
+      await this.sendStatusNotification(saved, booking.course.title);
+    }
+    return saved;
   }
 
   async checkIn(id: number, user: JwtRequestUser) {
@@ -86,8 +114,26 @@ export class BookingService {
     if (user.role !== UserRole.ADMIN && booking.course.instructorId !== user.id) {
       throw new ForbiddenException('只有课程导师可签到');
     }
+    const oldStatus = booking.status;
     booking.status = BookingStatus.COMPLETED;
-    return this.bookingRepo.save(booking);
+    const saved = await this.bookingRepo.save(booking);
+    if (oldStatus !== BookingStatus.COMPLETED) {
+      await this.sendStatusNotification(saved, booking.course.title);
+    }
+    return saved;
+  }
+
+  private async sendStatusNotification(booking: Booking, courseTitle: string) {
+    const title = notificationTitleMap[booking.status];
+    const content = `您的「${courseTitle}」预约状态已更新为${title}，预约编号：${booking.bookingNo}`;
+    const type = notificationTypeMap[booking.status];
+    await this.notificationService.create(
+      booking.studentId,
+      type,
+      title,
+      content,
+      booking.id,
+    );
   }
 }
 

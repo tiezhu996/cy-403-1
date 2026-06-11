@@ -1,4 +1,4 @@
-import { BookingStatus, UserRole, WorkshopStatus, WorkshopTag } from './enums';
+import { BookingStatus, NotificationType, UserRole, WorkshopStatus, WorkshopTag } from './enums';
 
 export interface User {
   id: number;
@@ -70,6 +70,18 @@ export interface Review {
   courseId: number;
   course?: Course;
   createdAt?: string;
+}
+
+export interface Notification {
+  id: number;
+  userId: number;
+  type: NotificationType;
+  title: string;
+  content: string;
+  isRead: boolean;
+  bookingId?: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface LoginResponse {

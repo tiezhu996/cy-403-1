@@ -3,6 +3,7 @@ import CourseBookPage from '@/pages/CourseBookPage.vue';
 import InstructorDashboardPage from '@/pages/InstructorDashboardPage.vue';
 import LoginPage from '@/pages/LoginPage.vue';
 import MyBookingsPage from '@/pages/MyBookingsPage.vue';
+import NotificationsPage from '@/pages/NotificationsPage.vue';
 import WorkshopDetailPage from '@/pages/WorkshopDetailPage.vue';
 import WorkshopsPage from '@/pages/WorkshopsPage.vue';
 import { useAuthStore } from '@/stores/user';
@@ -17,6 +18,7 @@ const router = createRouter({
     { path: '/workshops/:id', component: WorkshopDetailPage },
     { path: '/courses/:id/book', component: CourseBookPage, meta: { requiresAuth: true } },
     { path: '/my-bookings', component: MyBookingsPage, meta: { requiresAuth: true } },
+    { path: '/notifications', component: NotificationsPage, meta: { requiresAuth: true } },
     {
       path: '/instructor/dashboard',
       component: InstructorDashboardPage,

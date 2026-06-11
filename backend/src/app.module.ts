@@ -8,6 +8,7 @@ import { AppController } from './app.controller';
 import { AuthModule } from './modules/auth/auth.module';
 import { BookingModule } from './modules/booking/booking.module';
 import { CourseModule } from './modules/course/course.module';
+import { NotificationModule } from './modules/notification/notification.module';
 import { ReviewModule } from './modules/review/review.module';
 import { UserModule } from './modules/user/user.module';
 import { WorkshopModule } from './modules/workshop/workshop.module';
@@ -24,6 +25,7 @@ import { WorkshopModule } from './modules/workshop/workshop.module';
     WorkshopModule,
     CourseModule,
     BookingModule,
+    NotificationModule,
     ReviewModule,
   ],
   controllers: [AppController],

@@ -2,6 +2,7 @@ import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, Up
 import { UserRole } from '../../../common/enums/user-role.enum';
 import { Booking } from '../../booking/entity/booking.entity';
 import { Course } from '../../course/entity/course.entity';
+import { Notification } from '../../notification/entity/notification.entity';
 import { Review } from '../../review/entity/review.entity';
 import { Workshop } from '../../workshop/entity/workshop.entity';
 
@@ -39,6 +40,9 @@ export class User {
 
   @OneToMany(() => Review, (review) => review.student)
   reviews: Review[];
+
+  @OneToMany(() => Notification, (notification) => notification.user)
+  notifications: Notification[];
 
   @CreateDateColumn()
   createdAt: Date;
